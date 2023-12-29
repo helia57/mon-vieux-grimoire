@@ -1,6 +1,9 @@
 const Book = require('../models/Book');
 const fs = require('fs');
 
+
+
+
 exports.getAllBooks = (req, res, next) => {
   // Logique pour obtenir la liste des livres depuis la base de données
   Book.find()
@@ -20,6 +23,12 @@ exports.getAllBooks = (req, res, next) => {
               error: error,
           });
       });
+};
+
+exports.getBestRating = (req, res, next) => {
+  Book.find().sort({averageRating: -1}).limit(3)
+      .then((books)=>res.status(200).json(books))
+      .catch((error)=>res.status(404).json({ error }));
 };
 
 
