@@ -107,6 +107,9 @@ exports.getBestRating = (req, res, next) => {
       .then((books)=>res.status(200).json(books))
       .catch((error)=>res.status(404).json({ error }));
 };
+
+
+
 const validateBookFields = ( title, author, year, genre ) => {
     
   const errors = [];
@@ -213,7 +216,7 @@ exports.createBook = async (req, res, next) => {
       res.status(201).json({
           message: "Livre créé avec succès !",
       });
-  } catch (error) {
+  } catch (errors) {
       // Supprime l'image en cas d'erreur
       if (req.file) {
           deleteImage(req.file.path);
