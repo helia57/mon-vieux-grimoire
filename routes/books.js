@@ -13,6 +13,7 @@ router.get("/bestrating",booksCtrl.getBestRating);
 router.get('/:id', booksCtrl.getOneBook);
 
 router.post('/', auth, multer, multer.resizeImage, booksCtrl.createBook); 
+router.post('/:id/rating', auth, booksCtrl.averageRating);
 router.put('/:id', auth, multer, booksCtrl.modifyBook);
 router.delete('/:id', auth, booksCtrl.deleteBook);
 
