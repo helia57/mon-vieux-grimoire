@@ -1,19 +1,19 @@
 const express = require('express');
 
 const app = express();
-const mongoose = require('mongoose');
+
 const path = require('path');
-const booksRoutes = require('./routes/books');
-const userRoutes = require('./routes/user');
+const helmet = require("helmet");
+const sanitize = require("express-mongo-sanitize");
 
 
-mongoose.connect('mongodb+srv://Elia_MonVieuxGrimoire:THrHY.X6Hb8dcvd@cluster0.izwfjad.mongodb.net/')
-  
- 
-  .then(() => console.log('Connexion à MongoDB réussie !'))
-  .catch(() => console.log('Connexion à MongoDB échouée !'));
+// intercepte tous les requetes qui ont un "json" type et met à disposition sur l'objet requete dans req.body
+app.use(express.json());
 
 
+//Middleware de sécurité // Pour éviter les injections noSQL
+app.use(sanitize()); 
+app.use(helmet({ crossOriginResourcePolicy: false })); // Renforce la sécurité par diverses en-têtes HTTP (Content-Security-Policy, etc..)
 
 
 
@@ -25,12 +25,19 @@ app.use((req, res, next) => {
     next();
 });
 
-// intercepte tous les requetes qui ont un "json" type et met à disposition sur l'objet requete dans req.body
-app.use(express.json());
+
+const booksRoutes = require('./routes/books');
+const userRoutes = require('./routes/user');
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/auth', userRoutes);
 app.use('/api/books', booksRoutes);
+
+// Gestion des erreurs
+app.use((error, req, res, next) => {
+	console.error("Error", error);
+	res.status(500).json({ error: "Une erreur est survenue" });
+});
 
 
 

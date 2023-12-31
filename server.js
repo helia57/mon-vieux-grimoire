@@ -1,5 +1,9 @@
 const http = require('http');
 const app = require('./App');
+require("dotenv").config({ path: "./config/.env" });
+
+require("./config/database").connectToDB();
+
 
 const normalizePort = val => {
   const port = parseInt(val, 10);
@@ -12,8 +16,7 @@ const normalizePort = val => {
   }
   return false;
 };
-const port = normalizePort(process.env.PORT || '4000');
-app.set('port', port);
+
 
 const errorHandler = error => {
   if (error.syscall !== 'listen') {
@@ -34,6 +37,9 @@ const errorHandler = error => {
       throw error;
   }
 };
+
+const port = normalizePort(process.env.PORT);
+app.set('port', port);
 
 const server = http.createServer(app);
 
