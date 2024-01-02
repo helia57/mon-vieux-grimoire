@@ -2,8 +2,6 @@ const Book = require('../models/Book');
 const fs = require('fs');
 
 
-
-
 exports.getAllBooks = (req, res, next) => {
   // Logique pour obtenir la liste des livres depuis la base de données
   Book.find()
@@ -109,125 +107,24 @@ exports.getBestRating = (req, res, next) => {
 };
 
 
-
-const validateBookFields = ( title, author, year, genre ) => {
-    
-  const errors = [];
-  // Expression régulière pour autoriser seulement les lettres, chiffres, et & ,espaces pour le titre et l'auteur
-  const nameRegex = /^[a-zA-Z0-9\s&]{3,25}$/;
-  const genreRegex = /^[a-zA-Z0-9\s&]{3,10}$/;
-  // Expression régulière pour vérifier que l'année est un nombre à quatre chiffres
-  const yearRegex = /^\s*\d{4}\s*$/;
- 
-
-  // Vérifier si le titre respecte l'expression régulière
-  if (title && !nameRegex.test(title)) {
-      errors.push("Le format du titre est invalide.");
-  }
-
-  // Vérifier si l'auteur respecte l'expression régulière
-  if (author && !nameRegex.test(author)) {
-      errors.push("Le format de l'auteur est invalide.");
-  }
-
-  // Vérifier si le genre respecte l'expression régulière
-  if (genre && !genreRegex.test(genre)) {
-      errors.push("Le format du genre est invalide.");
-  }
-
-  // Vérifier si l'année respecte l'expression régulière
-  if (year && !yearRegex.test(year)) {
-      errors.push("L'année doit être au format YYYY.");
-  }
-
-return errors;
-};
-
-const deleteImage = (imagePath) => {
-  try {
-      fs.unlinkSync(imagePath);
-  } catch (error) {
-      console.error("Erreur lors de la suppression de l'image", error);
-  }
-};
-
 // Logique pour obtenir creation d'un livre 
-exports.createBook = async (req, res, next) => {
-  try {
-      const bookData = JSON.parse(req.body.book);
+exports.createBook = (req, res, next) => {
+	const bookObject = JSON.parse(req.body.book);
+	delete bookObject._id;
+	delete bookObject._userId;
 
-      delete bookData._id;
-      delete bookData._userId;
+	const book = new Book({
+		...bookObject,
+		userId: req.auth.userId,
+		imageUrl: `${req.protocol}://${req.get("host")}/images/${
+			req.file.filename
+		}`,
+	});
 
-      const { title, author, genre, year } = bookData;
-
-      const trimmedTitle = title.trim();
-      const trimmedAuthor = author.trim();
-      const trimmedGenre = genre.trim();
-      const trimmedYear = year.trim();
-
-      const errors = validateBookFields(
-          trimmedTitle,
-          trimmedAuthor,
-          trimmedGenre,
-          trimmedYear
-      );
-
-      
-      // Vérifie si le livre existe déjà en vérifiant le titre et l'auteur
-      const existingBook = await Book.findOne({
-          title: trimmedTitle,
-          author: trimmedAuthor,
-      });
-
-      if (existingBook) {
-        console.log('Ce livre existe déjà.');
-          // Supprime l'image si le livre existe déjà
-          if (req.file) {
-              deleteImage(req.file.path);
-          }
-          throw new Error("Ce livre existe déjà.");
-      }
-
-      // Vérifie si la note est nulle et force "ratings" à être vide
-      if (
-          bookData.ratings &&
-          bookData.ratings.length === 1 &&
-          bookData.ratings[0].grade === 0
-      ) {
-          bookData.ratings = [];
-          bookData.averageRating = 0;
-      }
-
-      const book = new Book({
-          ...bookData,
-          title: trimmedTitle,
-          author: trimmedAuthor,
-          genre: trimmedGenre,
-          year: trimmedYear,
-          userId: req.auth.userId,
-          imageUrl: `${req.protocol}://${req.get("host")}/images/${
-              req.file.filename
-          }`,
-      });
-
-      await book.save();
-
-      res.status(201).json({
-          message: "Livre créé avec succès !",
-      });
-  } catch (errors) {
-      // Supprime l'image en cas d'erreur
-      if (req.file) {
-          deleteImage(req.file.path);
-          
-      }
-      res.status(400).json({
-          error: error.message,
-      });
-  }
+	book.save()
+		.then(() => res.status(201).json({ message: "Objet enregistre !" }))
+		.catch((error) => res.status(400).json({ error }));
 };
-
 
 // Logique pour obtenir un livre depuis la base de données
 exports.getOneBook = (req, res, next) => {

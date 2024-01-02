@@ -3,39 +3,65 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
 
-const { check, validationResult } = require('express-validator');
 
 
-  
 
-exports.signup = [
-    check('email')
-        .notEmpty()
-        .withMessage('Email ne peut être vide')
-        .isEmail(),
-    check('password')
-        .trim()
-        .notEmpty()
-        .withMessage('Email ne peut être vide')
-        .isStrongPassword()
-        .withMessage('mot de passe requière majuscule,minuscule, chiffre et caractere spéciaux'),
-],(req, res, next) => {
-    const errors = validationResult(req);
-    if(!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-    bcrypt.hash(req.body.password, 12)
-      .then(hash => {
-        const user = new User({
-          email: req.body.email,
-          password: hash
-        });
-        user.save()
-          .then(() => res.status(201).json({ message: 'Utilisateur créé !' }))
-          .catch(error => res.status(400).json({ error }));
-      })
-      .catch(error => res.status(500).json({ error }));
+ // Logique s'authentifier 
+
+
+const isValidEmail = (email) => {
+	const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+	return emailRegex.test(email);
 };
+
+
+const isStrongPassword = (password) => {
+	const minLength = 8;
+	const hasUpperCase = /[A-Z]/.test(password);
+	const hasLowerCase = /[a-z]/.test(password);
+	const hasNumbers = /\d/.test(password);
+	const hasSpecialChars = /[!@#$%^&*()_+{}\[\]:;<>,.?~\\-]/.test(password);
+
+	return (
+		password.length >= minLength &&
+		hasUpperCase &&
+		hasLowerCase &&
+		hasNumbers &&
+		hasSpecialChars
+	);
+};
+exports.signup = (req, res, next) => {
+	const email = req.body.email;
+	const password = req.body.password;
+
+	if (!isValidEmail(email)) {
+		return res
+			.status(400)
+			.json({ error: "L'adresse e-mail n'est pas valide." });
+	}
+
+	if (!isStrongPassword(password)) {
+		return res
+			.status(400)
+			.json({ error: "Le mot de passe est trop faible" });
+	}
+
+	bcrypt
+		.hash(req.body.password, 10)
+		.then((hash) => {
+			const user = new User({
+				email: email,
+				password: hash,
+			});
+			user.save()
+				.then(() =>
+					res.status(201).json({ message: "Utilisateur cree !" })
+				)
+				.catch((error) => res.status(400).json({ error }));
+		})
+		.catch((error) => res.status(500).json({ error }));
+};
+
 
 exports.login = (req, res, next) => {
     User.findOne({ email: req.body.email })
@@ -53,7 +79,7 @@ exports.login = (req, res, next) => {
                         token: jwt.sign(
                             { userId: user._id },
                             process.env.TOKEN_KEY,
-                            { expiresIn: '4h' }
+                            { expiresIn: '24h' }
                         )
                     });
                 })

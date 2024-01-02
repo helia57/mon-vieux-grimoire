@@ -44,6 +44,7 @@ module.exports.resizeImage = (req, res, next) => {
 
       sharp(filePath)
           .resize({ width: 206, height: 260 })
+
           .toFile(outputFilePath)
           .then(() => {
               fs.unlink(filePath, () => {
@@ -56,5 +57,6 @@ module.exports.resizeImage = (req, res, next) => {
               return next();
           });
   }
+ 
 };
 
