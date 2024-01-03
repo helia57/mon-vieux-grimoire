@@ -23,7 +23,7 @@ const storage = multer.diskStorage({
 
 module.exports = multer({storage: storage}).single('image');
 
-sharp.cache(false);
+
 
   // Vérification de la taille du fichier (1 Mo maximum)
 module.exports.resizeImage = (req, res, next) => {
@@ -36,7 +36,7 @@ module.exports.resizeImage = (req, res, next) => {
     const maxFileSize = 1 * 1024 * 1024; // 1 Mo en octets
     if (req.file.size > maxFileSize) {
         // Si le fichier est trop grand, il est supprimé et renvoie une réponse
-        fs.unlinkSync(req.file.path, () => {
+        fs.unlink(req.file.path, () => {
             return res.status(400).json({ error: 'La taille du fichier dépasse la limite autorisée (1 Mo).' });
         });
 
@@ -51,7 +51,7 @@ module.exports.resizeImage = (req, res, next) => {
         .webp({ quality: 85})
         .toFile(outputFilePath)
         .then(() => {
-            fs.unlinkSync(fileName, () => {
+            fs.unlink(fileName, () => {
                 req.file.path = outputFilePath;
                 next();
             });
