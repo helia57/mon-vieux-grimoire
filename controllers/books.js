@@ -156,6 +156,21 @@ exports.modifyBook = (req, res, next) => {
           if (book.userId != req.auth.userId) {
               res.status(401).json({ message : 'Not authorized'});
           } else {
+            //efface la vieille image
+            if (req.file) {
+                const oldFilename = book.imageUrl.split("/images/")[1];
+                console.log("Ancien nom de fichier :", oldFilename);
+                fs.unlink(`images/${oldFilename}`, (err) => {
+                    if (err) {
+                        console.error(
+                            "Erreur lors de la suppression de l'ancienne image :",
+                            err
+                        );
+                    } else {
+                        console.log("Ancienne image supprimée avec succès");
+                    }
+                });
+            }
             Book.updateOne({ _id: req.params.id}, { ...bookObject, _id: req.params.id})
               .then(() => res.status(200).json({message : 'Objet modifié!'}))
               .catch(error => res.status(401).json({ error }));
