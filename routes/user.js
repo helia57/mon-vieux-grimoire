@@ -8,3 +8,5 @@ router.post('/signup', reqlimite,userCtrl.signup);
 router.post('/login', reqlimite, userCtrl.login);
 
 module.exports = router;
+
+// logique du router pour l'authentification des utilisateurs
